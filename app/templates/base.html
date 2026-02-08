@@ -1,0 +1,15 @@
+<!DOCTYPE html> <!-- forcing standards mode. p.s. Jinja temp. engine cannot handle comments outside here -->
+<html>
+    <head>
+        {% if title %}
+        <title>{{ title }} - flori5t.dev</title>
+        {% else %}
+        <title>Welcome to flori5t.dev!</title>
+        {% endif %} 
+    </head>
+    <body>
+        <div>flori5t.dev : <a href="/index">Home</a></div>
+        <hr>
+        {% block content%}{% endblock %}
+    </body>
+</html>
