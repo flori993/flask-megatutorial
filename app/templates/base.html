@@ -2,17 +2,20 @@
 <html>
     <head>
         {% if title %}
-        <title>{{ title }} - flori5t.dev</title>
+        <title>{{ title }} - flori993.dev</title>
         {% else %}
-        <title>Welcome to flori5t.dev!</title>
+        <title>Welcome to flori993.dev!</title>
         {% endif %} 
     </head>
     <body>
         <div>
-            flori5t.dev :  
+            flori993.dev :  
             <a href="{{ url_for('index') }}">Home</a>
-            <a href="{{ url_for('login') }}">Log-in</a>
-        
+            {% if current_user.is_anonymous %}
+            <a href="{{ url_for('login') }}">Login</a>
+            {% else %}
+            <a href="{{ url_for('logout') }}">Logout</a>
+            {% endif %}
         </div>
         <hr>
 
