@@ -44,3 +44,17 @@ class EditProfileForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     about_me = TextAreaField('About me', validators=[Length(min=0, max=140)])
     submit = SubmitField('Submit')
+
+    # Override the constructor to save the original username as an environment variable for future verification
+    def __init__(self, original_username, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.original_username = original_username
+    
+    # Simple validation of username, not really intended for busy applications when two or more
+    # processes are accessing the database at the same time may cause the validation to pass
+    # Validate username only if it was changed from the original username.
+    def validate_username(self, username):
+        if username.data != self.original_username:
+            user = db.session.scalar(sa.select(User).where(User.username == username.data))
+            if user is not None:
+                raise ValidationError('Please use a different username.')
