@@ -1,11 +1,14 @@
+from turtle import title
+from wtforms import form
 from flask import render_template, flash, redirect, url_for, request
 from app import app
 from app import database as db
-from app.forms import LoginForm, RegistrationForm
+from app.forms import LoginForm, RegistrationForm, EditProfileForm
 from app.dbmodels import User
 from flask_login import current_user, login_user, logout_user, login_required
 from urllib.parse import urlsplit
 import sqlalchemy as sa
+from datetime import datetime, timezone
 
 @app.route("/")
 @app.route("/index")
@@ -67,3 +70,40 @@ def register():
         db.session.commit()
         flash('Congratulations, you\'re now a registered user!')
     return render_template('register.html', title='Register', form=form)
+
+@app.route('/user/<username>') # <username> is a dynamic component for the URL
+@login_required # make this function accessible only to users logged in, so no-one else with the link could access profile
+def user(username):
+    user = db.first_or_404(sa.select(User).where(User.username == username))
+    posts = [
+        {'author': user, 'body': 'Test post #1'},
+        {'author': user, 'body': 'Test post #2'}
+    ]
+    return render_template('user.html', user=user, posts=posts)
+
+@app.before_request
+def before_request():
+    if current_user.is_authenticated:
+        current_user.last_seen = datetime.now(timezone.utc)
+        db.session.commit()
+        # Interesting fact, the reason why there's no db.session.add() before 
+        # commit() is because when current_user is referenced, Flask-Login 
+        # will invoke the user loader callback function, which will run a 
+        # database query that will put the target user in the database session.
+        # The user may be added again in this function, but it's not necessary 
+        # because it's already there
+
+@app.route('/edit_profile', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    _form = EditProfileForm()
+    if _form.validate_on_submit():
+        current_user.username = _form.username.data
+        current_user.about_me = _form.about_me.data
+        db.session.commit()
+        flash('Your changes have been saved')
+        return redirect(url_for('edit_profile'))
+    elif request.method == 'GET':
+        _form.username.data = current_user.username
+        _form.about_me.data = current_user.about_me
+    return render_template('edit_profile.html', title='Edit profile', form=_form)
